@@ -37,16 +37,16 @@ func (c *CPU) debug() {
 }
 func (c *CPU) viewMemoryAt(address uint16) {
 
-	nextEightBytes := make([]uint16, 4) // or 8
+	nextEightBytes := make([]uint16, 8) // or 4
 
-	for i := 0; i < 4; i++ {
+	for i := 0; i < 8; i++ {
 		// hexValue := fmt.Sprintf("0x%#04x", (*c).memory[address+uint16(i)])
 		nextEightBytes[i] = (*c).memory[address+uint16(i)]
 		// nextEightBytes[i] = fmt.Sprintf("0x%04x", (*c).memory[address+uint16(i)])
 
 	}
 
-	fmt.Printf("nextEightBytes: %#+04v\n\n", nextEightBytes)
+	fmt.Printf("%#04v: %#+04v\n\n", address, nextEightBytes)
 }
 func (c CPU) getRegister(name string) (uint16, error) {
 	for _, regName := range c.registerNames {
@@ -70,15 +70,16 @@ func (c *CPU) setRegister(name string, value uint16) error {
 func (c *CPU) fetch() uint16 {
 	instructionIndex, _ := c.getRegister("ip")
 	instruction := c.memory[instructionIndex]
-	c.setRegister("ip", instructionIndex+1)
+	(*c).setRegister("ip", instructionIndex+1)
 	return instruction
 }
 
 func (c *CPU) fetch16() uint16 {
-	return c.fetch()
+	return (*c).fetch()
 }
 
 func (c *CPU) execute(instruction uint16) {
+
 	switch instruction {
 	// Move literal into register
 	case MOV_LIT_REG:
@@ -130,7 +131,19 @@ func (c *CPU) execute(instruction uint16) {
 			(*c).setRegister("acc", registerValue1+registerValue2)
 			return
 		}
+		// Compare literal to the accumulator register, jump if not equal
+	case JUMP_NOT_EQ:
+		{
+			literal := (*c).fetch16()
+			address := (*c).fetch16()
+			acc, _ := (*c).getRegister("acc")
+			if literal != acc {
+				(*c).setRegister("ip", address)
+			}
+			return
+		}
 	}
+
 }
 
 func (c *CPU) step() {
