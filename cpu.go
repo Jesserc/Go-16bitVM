@@ -26,6 +26,9 @@ func NewCPU(memory Memory) CPU {
 		cpu.registerMap[name] = i
 	}
 
+	// We set stack pointer and frame pointer registers to point to len(memory - 1) memory offset,
+	// This is to avoid collisions with other registers
+	// We will decrement it for every `push` operation and increment for every `pop` operation
 	cpu.setRegister("sp", uint16(len(memory)-1))
 	cpu.setRegister("fp", uint16(len(memory)-1))
 	return cpu
@@ -40,14 +43,10 @@ func (c *CPU) debug() {
 	}
 }
 func (c *CPU) viewMemoryAt(address uint16) {
-
-	nextEightBytes := make([]uint16, 8) // or 4
+	nextEightBytes := make([]uint16, 8)
 
 	for i := 0; i < 8; i++ {
-		// hexValue := fmt.Sprintf("0x%#04x", (*c).memory[address+uint16(i)])
 		nextEightBytes[i] = (*c).memory[address+uint16(i)]
-		// nextEightBytes[i] = fmt.Sprintf("0x%04x", (*c).memory[address+uint16(i)])
-
 	}
 
 	fmt.Printf("%#04v: %#+04v\n\n", address, nextEightBytes)
@@ -86,6 +85,14 @@ func (c *CPU) push(value uint16) {
 	spAddress, _ := (*c).getRegister("sp") // get the value of stack pointer
 	(*c).memory[spAddress] = value         // save value to memory using stack pointer address as key
 	(*c).setRegister("sp", spAddress-1)    // decrement stack pointer (stack pointer goes from len(memory - 1) => len(memory - 1) -= 1, for every push)
+}
+
+func (c *CPU) pop(registerIndex uint16) {
+	spAddress, _ := (*c).getRegister("sp")
+	nextSpAddress := spAddress + 1
+	value := c.memory[nextSpAddress]
+	(*c).registers[registerIndex] = value
+	(*c).setRegister("sp", nextSpAddress) // increment stack pointer (stack pointer goes from len(memory - 1) => len(memory - 1) += 1, for every pop, i.e, inverse of push)
 }
 
 func (c *CPU) fetchRegisterIndex() uint16 {
@@ -170,6 +177,13 @@ func (c *CPU) execute(instruction uint16) {
 			registerIndex := (*c).fetchRegisterIndex()
 			register := c.registers[registerIndex]
 			(*c).push(register) // mechanism to handle pushing to stack is implemented here
+			return
+		}
+		// Pop a value from stack to a register
+	case POP:
+		{
+			registerIndex := (*c).fetchRegisterIndex()
+			(*c).pop(registerIndex)
 			return
 		}
 	}
