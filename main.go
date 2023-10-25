@@ -1,6 +1,10 @@
 package main
 
-import "fmt"
+import (
+	"bufio"
+	"fmt"
+	"os"
+)
 
 const IP = 0
 const ACC = 1
@@ -19,10 +23,10 @@ func main() {
 	// The order goes like this:
 	// [instruction, value (two values where necessary)]
 	memory[increment()] = MOV_LIT_REG // instruction
-	memory[increment()] = 0x1234      // value for the above instruction
+	memory[increment()] = 0x0020      // value for the above instruction
 	memory[increment()] = R1          // value for the above instruction and so on...
 	memory[increment()] = MOV_LIT_REG
-	memory[increment()] = 0xABCD
+	memory[increment()] = 0x0020
 	memory[increment()] = R2
 	memory[increment()] = ADD_REG_REG
 	memory[increment()] = R1
@@ -31,8 +35,8 @@ func main() {
 	memory[increment()] = ACC
 	memory[increment()] = 0x0014 // 20
 	memory[increment()] = JUMP_NOT_EQ
-	memory[increment()] = 0xbe01
-	memory[increment()] = 0x10 // 42
+	memory[increment()] = 0xffff
+	memory[increment()] = 0x0000
 
 	cpu := NewCPU(memory)
 
@@ -44,52 +48,20 @@ func main() {
 	cpu.viewMemoryAt(ip1)
 	cpu.viewMemoryAt(0x14)
 
-	fmt.Println() // line space
-	fmt.Println("Step 1")
+	// This will prompt users to press the ENTER key in the terminal to loop through execution process
+	for i := 0; i < 5; i++ {
+		reader := bufio.NewReader(os.Stdin)
+		reader.ReadString('\n')
 
-	cpu.step()
-	cpu.debug()
-	ip2, _ := cpu.getRegister("ip")
-	cpu.viewMemoryAt(ip2)
-	cpu.viewMemoryAt(0x14)
+		fmt.Println() // line space
+		fmt.Println("Step", i+1)
 
-	fmt.Println() // line space
-	fmt.Println("Step 2")
-
-	cpu.step()
-	cpu.debug()
-	ip3, _ := cpu.getRegister("ip")
-	cpu.viewMemoryAt(ip3)
-	cpu.viewMemoryAt(0x14)
-
-	fmt.Println() // line space
-	fmt.Println("Step 3")
-
-	cpu.step()
-	cpu.debug()
-	ip4, _ := cpu.getRegister("ip")
-	cpu.viewMemoryAt(ip4)
-	cpu.viewMemoryAt(0x14)
-
-	fmt.Println() // line space
-	fmt.Println("Step 4")
-
-	cpu.step()
-	cpu.debug()
-	ip5, _ := cpu.getRegister("ip")
-	cpu.viewMemoryAt(ip5)
-	cpu.viewMemoryAt(0x14)
-
-	fmt.Println() // line space
-	fmt.Println("Step 5")
-
-	cpu.step()
-	cpu.debug()
-	ip6, _ := cpu.getRegister("ip")
-	cpu.viewMemoryAt(ip6)
-	cpu.viewMemoryAt(0x14)
-	fmt.Println() // line space
+		cpu.step()
+		cpu.debug()
+		ip, _ := cpu.getRegister("ip")
+		cpu.viewMemoryAt(ip)
+		cpu.viewMemoryAt(0x14)
+	}
 
 	fmt.Printf("Full cpu state after executions: %#+04v\n\n", cpu)
-
 }

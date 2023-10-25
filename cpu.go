@@ -13,9 +13,10 @@ type CPU struct {
 }
 
 func NewCPU(memory Memory) CPU {
+
 	cpu := CPU{
 		memory:        memory,
-		registerNames: []string{"ip", "acc", "r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8"},
+		registerNames: []string{"ip", "acc", "r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8", "sp", "fp"}, // sp = stack pointer, fp = frame pointer
 		registerMap:   make(map[string]int),
 	}
 
@@ -24,6 +25,9 @@ func NewCPU(memory Memory) CPU {
 	for i, name := range cpu.registerNames {
 		cpu.registerMap[name] = i
 	}
+
+	cpu.setRegister("sp", uint16(len(memory)-1))
+	cpu.setRegister("fp", uint16(len(memory)-1))
 	return cpu
 }
 func (c *CPU) debug() {
@@ -78,6 +82,16 @@ func (c *CPU) fetch16() uint16 {
 	return (*c).fetch()
 }
 
+func (c *CPU) push(value uint16) {
+	spAddress, _ := (*c).getRegister("sp") // get the value of stack pointer
+	(*c).memory[spAddress] = value         // save value to memory using stack pointer address as key
+	(*c).setRegister("sp", spAddress-1)    // decrement stack pointer (stack pointer goes from len(memory - 1) => len(memory - 1) -= 1, for every push)
+}
+
+func (c *CPU) fetchRegisterIndex() uint16 {
+	return (*c).fetch() % uint16(len(c.registerNames))
+}
+
 func (c *CPU) execute(instruction uint16) {
 
 	switch instruction {
@@ -85,7 +99,7 @@ func (c *CPU) execute(instruction uint16) {
 	case MOV_LIT_REG:
 		{
 			literal := (*c).fetch16()
-			register := (*c).fetch() % uint16(len(c.registerNames))
+			register := (*c).fetchRegisterIndex()
 			// (*c).setRegister("r1", literal)
 			(*c).registers[register] = literal
 
@@ -94,17 +108,18 @@ func (c *CPU) execute(instruction uint16) {
 	// Move register to register
 	case MOV_REG_REG:
 		{
-			registerFrom := (*c).fetch() % uint16(len(c.registerNames))
-			registerTo := (*c).fetch() % uint16(len(c.registerNames))
+			registerFrom := (*c).fetchRegisterIndex()
+			registerTo := (*c).fetchRegisterIndex()
 			value := (*c).registers[registerFrom]
 
 			(*c).registers[registerTo] = value
+
 			return
 		}
 		// Move register to memory
 	case MOV_REG_MEM:
 		{
-			registerFrom := (*c).fetch() % uint16(len(c.registerNames))
+			registerFrom := (*c).fetchRegisterIndex()
 			address := (*c).fetch16()
 			value := (*c).registers[registerFrom]
 			(*c).memory[address] = value
@@ -114,7 +129,7 @@ func (c *CPU) execute(instruction uint16) {
 	case MOV_MEM_REG:
 		{
 			address := (*c).fetch16()
-			registerTo := (*c).fetch() % uint16(len(c.registerNames))
+			registerTo := (*c).fetchRegisterIndex()
 			value := (*c).memory[address]
 			(*c).registers[registerTo] = value
 			return
@@ -134,12 +149,27 @@ func (c *CPU) execute(instruction uint16) {
 		// Compare literal to the accumulator register, jump if not equal
 	case JUMP_NOT_EQ:
 		{
-			literal := (*c).fetch16()
+			value := (*c).fetch16()
 			address := (*c).fetch16()
 			acc, _ := (*c).getRegister("acc")
-			if literal != acc {
+			if value != acc {
 				(*c).setRegister("ip", address)
 			}
+			return
+		}
+		// Push literal to stack
+	case PUSH_LIT:
+		{
+			value := (*c).fetch16()
+			(*c).push(value) // mechanism to handle pushing to stack is implemented here
+			return
+		}
+		// Push value in a register to stack
+	case PUSH_REG:
+		{
+			registerIndex := (*c).fetchRegisterIndex()
+			register := c.registers[registerIndex]
+			(*c).push(register) // mechanism to handle pushing to stack is implemented here
 			return
 		}
 	}
