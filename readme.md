@@ -1,9 +1,11 @@
-# Minimal 16 bits register based virtual machine
+# Minimal 16-bits stack-register-based virtual machine
+This is a further improvement on my [minimal 16-bit register-based VM](https://github.com/Jesserc/Goreg-vm) with support for stack-register-based mechanisms and more instruction sets.
 
+<!--
 # How it works
 
-The VMs CPU has very small dedicated memory cells (registers) that hold values that are being used while the CPU is executing its operations.
-We can move values from main memory to registers, registers to memory and registers to registers.
+The VM CPU has small dedicated memory cells (registers) that hold values used while the CPU executes its operations.
+We can move values from main memory to registers, registers to memory, and registers to registers.
 
 # Overview
 
@@ -11,12 +13,12 @@ We can move values from main memory to registers, registers to memory and regist
 
 #### a. CPU Structure:
 
-- `Memory`: A slice of uint16 to emulate the memory of the VM.
+- `Memory`: A slice of uint16 to emulate the VM's memory.
 - `Register Names`: A slice of strings representing the names of the registers.
 
 ```go
 // ip = Instruction Pointer (IP) (register in the CPU that holds the memory address of the next instruction to be executed),
-// acc = Accumulator (register in the CPU that holds result of arithmetic operations),
+// acc = Accumulator (register in the CPU that holds the result of arithmetic operations),
 // r1 - r8 = random registers
 registerNames: []string{"ip", "acc", "r1", "r2", "r3", "r4", "r5", "r6", "r7", "r8"},
 ```
@@ -26,7 +28,7 @@ registerNames: []string{"ip", "acc", "r1", "r2", "r3", "r4", "r5", "r6", "r7", "
 
 #### b. NewCPU Function:
 
-Initializes a new CPU with a given memory, set of register names, an empty register map, and a register slice of a specified size.
+Initializes a new CPU with a given memory, a set of register names, an empty register map, and a register slice of a specified size.
 
 #### c. Instruction set:
 
@@ -84,3 +86,4 @@ A block comment in `cpu.go` illustrates the sequence of state changes when execu
 
 - #### Instruction Encoding/Decoding:
   There's no formalized instruction encoding/decoding scheme.
+  -->
